@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>기분날씨</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="description" content="하루 10초, 오늘 기분을 나의 작은 하늘에 날씨로 남겨요.">
+  <meta name="theme-color" content="#DCEEFC">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="기분날씨">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preload" href="fonts/Pretendard.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/GowunBatang-Bold.woff2" as="font" type="font/woff2" crossorigin>
+  <style>html,body{background:#DCEEFC;margin:0}</style>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><div class="amb"></div><div class="amb"></div></div>
+  <div class="thunder-flash" id="thunder-flash" aria-hidden="true"></div>
+
+  <div class="stage" id="stage">
+    <main class="views">
+
+      <!-- 오늘 -->
+      <section class="view view-today is-active" id="view-today" aria-label="오늘">
+        <header class="top">
+          <div class="top-date">
+            <h1 id="t-date"></h1>
+            <span id="t-dow"></span>
+          </div>
+          <div class="top-side">
+            <span class="stat-pill" id="t-streak" hidden></span>
+            <button class="icon-btn" id="btn-settings" type="button" aria-label="설정"></button>
+          </div>
+        </header>
+
+        <div class="sky-slot" id="sky-slot">
+          <div class="arch" id="arch">
+            <canvas id="sky" role="img" aria-label="나의 작은 하늘"></canvas>
+            <span class="demo-pill" id="demo-pill" hidden>체험 모드</span>
+          </div>
+          <button class="banner" id="arrival-banner" type="button" hidden>
+            <span class="banner-dot"></span>
+            <span id="arrival-text">일기예보가 도착했어요</span>
+          </button>
+        </div>
+
+        <div class="panel" id="panel" data-mode="pick">
+          <div class="p-head p-head-pick">
+            <h2>오늘 마음의 날씨는 어때요?</h2>
+          </div>
+          <div class="p-head p-head-compose">
+            <h2 id="c-name"></h2>
+            <p id="c-comment"></p>
+          </div>
+
+          <div class="picker" id="picker" data-mode="grid" role="group" aria-label="오늘의 기분 고르기"></div>
+
+          <form class="memo" id="memo-form" autocomplete="off">
+            <input id="memo-input" type="text" enterkeyhint="done" aria-label="한 줄 메모" autocomplete="off">
+            <button type="submit" class="memo-go">남기기</button>
+          </form>
+
+          <div class="done" id="done">
+            <div class="done-head">
+              <span class="done-ic" id="d-ic"></span>
+              <div class="done-txt">
+                <h2 id="d-name"></h2>
+                <span id="d-feel"></span>
+              </div>
+              <button class="text-btn" id="d-change" type="button">바꾸기</button>
+            </div>
+            <button class="done-memo" id="d-memo" type="button"></button>
+            <p class="done-note" id="d-note"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 달력 -->
+      <section class="view view-cal" id="view-calendar" aria-label="달력">
+        <header class="cal-head">
+          <div class="cal-title">
+            <span id="cal-year"></span>
+            <h1 id="cal-month"></h1>
+          </div>
+          <div class="cal-nav">
+            <button class="icon-btn" id="cal-prev" type="button" aria-label="이전 달"></button>
+            <button class="icon-btn" id="cal-next" type="button" aria-label="다음 달"></button>
+          </div>
+        </header>
+        <div class="cal-summary" id="cal-summary"></div>
+        <div class="cal-dow" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div class="cal-grid-wrap" id="cal-wrap"><div class="cal-grid" id="cal-grid"></div></div>
+      </section>
+
+      <!-- 예보 -->
+      <section class="view view-fc" id="view-forecast" aria-label="나의 기분 일기예보">
+        <header class="fc-head">
+          <h1>나의 기분 일기예보</h1>
+          <p id="fc-sub"></p>
+        </header>
+        <div class="fc-body" id="fc-body">
+          <div class="fc-track" id="fc-track"></div>
+          <div class="fc-dots" id="fc-dots" aria-hidden="true"></div>
+          <div class="fc-actions" id="fc-actions">
+            <button class="btn btn-glass" id="fc-save" type="button"></button>
+            <button class="btn btn-ink" id="fc-share" type="button"></button>
+          </div>
+        </div>
+        <div class="fc-empty" id="fc-empty" hidden>
+          <div class="fc-empty-arches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <h2>아직 관측 자료가 없어요</h2>
+          <p>오늘의 하늘을 남기면 이번 주 예보가 시작돼요.</p>
+          <button class="btn btn-ink" id="fc-start" type="button">오늘 하늘 남기러 가기</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" id="tabbar" aria-label="화면 이동">
+      <span class="tab-ind" id="tab-ind" aria-hidden="true"></span>
+      <button class="tab is-active" type="button" data-tab="today" aria-current="page"><span class="tab-ic"></span><span>오늘</span></button>
+      <button class="tab" type="button" data-tab="calendar"><span class="tab-ic"></span><span>달력</span></button>
+      <button class="tab" type="button" data-tab="forecast"><span class="tab-ic"></span><span>예보</span><i class="tab-dot" id="tab-dot" hidden></i></button>
+    </nav>
+
+    <div id="sheets"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

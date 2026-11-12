@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기분날씨 앱 4개 비교 평가</title>
+<style>
+  :root { --ink:#1f2328; --sub:#6b7280; --line:#e5e7eb; --accent:#3b6fd8; --bg:#f7f7f8; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; color:var(--ink); background:var(--bg); line-height:1.55; -webkit-text-size-adjust:100%; }
+  main { max-width: 640px; margin: 0 auto; padding: 22px 16px 120px; }
+  h1 { font-size: 23px; margin: 0 0 6px; }
+  h2 { font-size: 19px; margin: 0 0 8px; }
+  p { margin: 6px 0; }
+  .sub { color: var(--sub); font-size: 14px; }
+  .box { background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px; margin: 12px 0; }
+  .app { border-left: 5px solid var(--accent); }
+  ol { margin: 6px 0 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  a.open { display:inline-block; font-size:16px; padding:9px 14px; border-radius:10px; background:var(--accent); color:#fff; text-decoration:none; margin: 4px 0 6px; }
+  .q { padding: 10px 0; border-top: 1px dashed var(--line); }
+  .q:first-of-type { border-top: none; }
+  .q b { display:block; font-size: 15px; }
+  .q .sub { display:block; margin-bottom: 6px; }
+  .scale { display:flex; gap:6px; }
+  .scale label { flex:1; }
+  .scale input { position:absolute; opacity:0; pointer-events:none; }
+  .scale span { display:block; text-align:center; padding:10px 0; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:16px; }
+  .scale input:checked + span { background:var(--accent); color:#fff; border-color:var(--accent); }
+  input[type=text], textarea, select { width:100%; font: inherit; font-size:16px; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); margin-top:4px; }
+  textarea { min-height: 76px; }
+  label.f { display:block; margin-top: 10px; font-size: 14px; color: var(--sub); }
+  .rank { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .bar { position: fixed; left:0; right:0; bottom:0; background: rgba(255,255,255,.96); border-top:1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .bar .in { max-width: 640px; margin: 0 auto; display:flex; gap:10px; align-items:center; }
+  .bar button { flex: 0 0 auto; font-size:16px; padding:11px 16px; border-radius:12px; border:none; background:#1f9d55; color:#fff; }
+  #status { font-size: 13px; color: var(--sub); }
+  #out { width:100%; min-height: 180px; font-size: 13px; display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>기분날씨 앱 4개 비교 평가</h1>
+  <p>하루 기분을 날씨로 남기는 앱을 <b>같은 요청으로 4번</b> 만들었어요. 어느 쪽이 더 좋은지 솔직하게 평가해 주세요. 정답은 없고, 느낀 그대로가 제일 도움이 돼요.</p>
+  <p class="sub">평가는 이 휴대폰에만 저장되고 어디로도 자동 전송되지 않아요. 다 하면 맨 아래 <b>결과 복사</b>를 눌러 카톡으로 보내 주세요. 앱 하나에 3~5분이면 충분해요.</p>
+
+  <div class="box">
+    <h2>하는 법</h2>
+    <ol>
+      <li>아래 순서대로 <b>앱 열기</b>를 누르면 새 탭에서 앱이 열려요.</li>
+      <li>앱마다 이렇게 해 보세요.
+        <ol>
+          <li>처음 열고 10초 둘러보기(첫인상)</li>
+          <li>오늘 기분을 고르고 한 줄 메모 남기기</li>
+          <li>달력에서 오늘과 지난 날 보기(예시 데이터 기능이 있으면 눌러 보기)</li>
+          <li>주간 '기분 일기예보' 카드 보고 이미지로 저장해 보기</li>
+          <li>새로고침해서 기록이 남았는지 보기</li>
+          <li>1~2분 자유롭게 눌러 보기</li>
+        </ol>
+      </li>
+      <li>이 탭으로 돌아와 점수를 눌러 주세요. 1 = 쓰기 어렵거나 깨짐, 3 = 무난한 보통 앱, 5 = 앱스토어 상위 앱 수준.</li>
+    </ol>
+  </div>
+
+  <div class="box"><b>추천 순서:</b> <span id="order"></span><br><span class="sub">사람마다 순서를 다르게 섞었어요. 보는 순서가 점수에 주는 영향을 줄이려는 거예요.</span></div>
+
+  <div id="apps"></div>
+
+  <div class="box">
+    <h2>전체 순위</h2>
+    <div class="rank" id="rank"></div>
+    <label class="f">1위와 4위를 고른 이유(두세 문장)<textarea id="rank_reason"></textarea></label>
+    <label class="f">이름이나 별명(선택)<input type="text" id="who"></label>
+    <label class="f">그 밖에 하고 싶은 말(선택)<textarea id="notes"></textarea></label>
+    <textarea id="out" readonly></textarea>
+  </div>
+</main>
+
+<div class="bar"><div class="in"><button id="copyBtn" type="button">결과 복사</button><span id="status">점수를 다 누르면 결과를 복사해 카톡으로 보내 주세요.</span></div></div>
+
+<script>
+const QUESTIONS = [
+  ["첫인상", "열자마자 예쁘고 갖고 싶은가"],
+  ["기록하기", "기분을 쉽고 빠르게, 기분 좋게 기록할 수 있는가"],
+  ["다시보기", "달력과 주간 카드를 다시 보고 싶고 친구에게 보내고 싶은가"],
+  ["완성도", "어색한 곳, 깨진 곳, 헷갈리는 곳이 없는가"],
+  ["계속쓰기", "매일 쓰고 싶은가"],
+];
+const SHOW = { "다시보기": "다시 보기", "계속쓰기": "계속 쓰기" };
+const APPS = ["1", "2", "3", "4"];
+const KEY = "friend-eval-draft-v1";
+
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+let order = JSON.parse(localStorage.getItem("friend-eval-order-v1") || "null");
+if (!order) { order = shuffle(APPS); localStorage.setItem("friend-eval-order-v1", JSON.stringify(order)); }
+document.getElementById("order").textContent = order.map(a => "앱 " + a).join(" → ");
+
+const apps = document.getElementById("apps");
+for (const a of order) {
+  const box = document.createElement("div");
+  box.className = "box app";
+  let html = `<h2>앱 ${a}</h2><a class="open" href="./${a}/" target="_blank" rel="noopener">앱 ${a} 열기</a>`;
+  QUESTIONS.forEach(([k, q], i) => {
+    html += `<div class="q"><b>${"①②③④⑤"[i]} ${SHOW[k] || k}</b><span class="sub">${q}</span><div class="scale">`;
+    for (let s = 1; s <= 5; s++) html += `<label><input type="radio" name="a${a}_${k}" value="${s}"><span>${s}</span></label>`;
+    html += `</div></div>`;
+  });
+  html += `<label class="f">가장 좋은 점<input type="text" id="a${a}_best"></label><label class="f">가장 아쉬운 점<input type="text" id="a${a}_worst"></label>`;
+  box.innerHTML = html;
+  apps.appendChild(box);
+}
+
+const rank = document.getElementById("rank");
+for (let r = 1; r <= 4; r++) {
+  const l = document.createElement("label");
+  l.className = "f";
+  l.innerHTML = `${r}위<select id="rank${r}"><option value="">고르기</option>${APPS.map(a => `<option value="${a}">앱 ${a}</option>`).join("")}</select>`;
+  rank.appendChild(l);
+}
+
+function collect() {
+  const d = { apps: {}, ranking: [], rank_reason: val("rank_reason"), who: val("who"), notes: val("notes"), order };
+  for (const a of APPS) {
+    const scores = {};
+    for (const [k] of QUESTIONS) { const c = document.querySelector(`input[name="a${a}_${k}"]:checked`); scores[k] = c ? Number(c.value) : null; }
+    d.apps[a] = { scores, best: val(`a${a}_best`), worst: val(`a${a}_worst`) };
+  }
+  for (let r = 1; r <= 4; r++) d.ranking.push(val("rank" + r));
+  return d;
+}
+function val(id) { return document.getElementById(id).value; }
+function restore(d) {
+  if (!d) return;
+  for (const a of APPS) {
+    const x = (d.apps || {})[a]; if (!x) continue;
+    for (const [k] of QUESTIONS) { const v = x.scores && x.scores[k]; if (v) { const el = document.querySelector(`input[name="a${a}_${k}"][value="${v}"]`); if (el) el.checked = true; } }
+    if (x.best) document.getElementById(`a${a}_best`).value = x.best;
+    if (x.worst) document.getElementById(`a${a}_worst`).value = x.worst;
+  }
+  (d.ranking || []).forEach((v, i) => { const el = document.getElementById("rank" + (i + 1)); if (el) el.value = v || ""; });
+  for (const f of ["rank_reason", "who", "notes"]) if (d[f]) document.getElementById(f).value = d[f];
+}
+restore(JSON.parse(localStorage.getItem(KEY) || "null"));
+const saveDraft = () => localStorage.setItem(KEY, JSON.stringify(collect()));
+document.addEventListener("input", saveDraft);
+document.addEventListener("change", saveDraft);
+
+function toText(d) {
+  const lines = ["[기분날씨 평가]" + (d.who ? " " + d.who : ""), "본 순서: " + d.order.join("→")];
+  for (const a of APPS) {
+    const s = d.apps[a].scores;
+    lines.push(`앱${a}: ` + QUESTIONS.map(([k]) => `${SHOW[k] || k} ${s[k] ?? "-"}`).join(", "));
+    if (d.apps[a].best) lines.push(`  좋은 점: ${d.apps[a].best}`);
+    if (d.apps[a].worst) lines.push(`  아쉬운 점: ${d.apps[a].worst}`);
+  }
+  lines.push("순위: " + d.ranking.map((v, i) => `${i + 1}위 ${v ? "앱" + v : "-"}`).join(", "));
+  if (d.rank_reason) lines.push("이유: " + d.rank_reason);
+  if (d.notes) lines.push("기타: " + d.notes);
+  lines.push("코드: " + btoa(unescape(encodeURIComponent(JSON.stringify(d)))));
+  return lines.join("\n");
+}
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const d = collect();
+  const missing = APPS.filter(a => Object.values(d.apps[a].scores).some(v => v == null));
+  const text = toText(d);
+  const st = document.getElementById("status");
+  const out = document.getElementById("out");
+  try {
+    await navigator.clipboard.writeText(text);
+    st.textContent = "복사했어요. 카톡에 붙여 넣어 보내 주세요." + (missing.length ? ` (아직 빈 점수: ${missing.map(a => "앱 " + a).join(", ")})` : "");
+    out.style.display = "none";
+  } catch (e) {
+    out.value = text; out.style.display = "block"; out.focus(); out.select();
+    st.textContent = "자동 복사가 안 돼서 아래 칸에 결과를 띄웠어요. 길게 눌러 전체 복사해 보내 주세요.";
+  }
+});
+</script>
+</body>
+</html>

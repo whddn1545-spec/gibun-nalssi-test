@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="48" cy="48" r="46" gradientUnits="userSpaceOnUse"><stop stop-color="#FFCB52" stop-opacity=".6"/><stop offset=".55" stop-color="#FFB83F" stop-opacity=".2"/><stop offset="1" stop-color="#FFB83F" stop-opacity="0"/></radialGradient>
+    <radialGradient id="orb" cx="40" cy="38" r="35" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF8D2"/><stop offset=".5" stop-color="#FFD866"/><stop offset="1" stop-color="#FF9B36"/></radialGradient>
+    <linearGradient id="ray" x1="48" y1="6" x2="48" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#FFE38F"/><stop offset="1" stop-color="#FFB03E"/></linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="46" fill="url(#glow)"/>
+  <path d="M48 8.5v8M48 79.5v8M8.5 48h8M79.5 48h8M20 20l5.7 5.7M70.3 70.3l5.7 5.7M76 20l-5.7 5.7M25.7 70.3 20 76" stroke="url(#ray)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="48" cy="48" r="24" fill="url(#orb)"/>
+  <ellipse cx="40.5" cy="38.5" rx="10" ry="6.5" fill="#fff" opacity=".6" transform="rotate(-26 40.5 38.5)"/>
+</svg>

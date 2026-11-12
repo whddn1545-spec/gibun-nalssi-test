@@ -1,0 +1,94 @@
+/* 기분날씨 디자인 토큰. 색, 글꼴, 움직임은 이 파일의 값만 쓴다. */
+
+@font-face { font-family: "Gowun Batang"; src: url("../assets/fonts/GowunBatang-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Gowun Batang"; src: url("../assets/fonts/GowunBatang-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Gibun Sans"; src: url("../assets/fonts/GibunSans-Variable.woff2") format("woff2"); font-weight: 45 920; font-display: swap; }
+
+/* 하늘이 바뀌면 글자색도 부드럽게 따라가도록 등록한다. */
+@property --ink { syntax: "<color>"; inherits: true; initial-value: #fff; }
+@property --ink-2 { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.78); }
+@property --ink-3 { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.55); }
+@property --glass { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.14); }
+@property --glass-2 { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.24); }
+@property --glass-line { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.26); }
+
+:root {
+  color-scheme: dark;
+
+  --font-display: "Gowun Batang", "Noto Serif KR", "AppleMyungjo", serif;
+  --font-ui: "Gibun Sans", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  --fs-hero: clamp(44px, 14cqw, 58px);
+  --fs-title: 26px;
+  --fs-h2: 20px;
+  --fs-body: 16px;
+  --fs-sub: 14px;
+  --fs-cap: 12px;
+
+  --gutter: 20px;
+  --r-xl: 32px;
+  --r-lg: 24px;
+  --r-md: 18px;
+  --r-sm: 12px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 58px;
+  --kb: 0px;
+
+  --shadow-1: 0 8px 28px rgba(8, 16, 48, .22);
+  --shadow-2: 0 20px 60px rgba(6, 12, 40, .36);
+
+  /* 패널 화면과 시트의 어두운 유리 */
+  --panel: rgba(255, 255, 255, .09);
+  --panel-line: rgba(255, 255, 255, .14);
+  --sheet: rgba(20, 26, 56, .86);
+
+  /* 날씨 색 (달력 칩, 통계 막대, 포인트) */
+  --c-sunny: #ffb547;
+  --c-cloudy: #a9b9cf;
+  --c-rain: #5b92f0;
+  --c-thunder: #8a68e0;
+  --c-snow: #bfe6f7;
+  --c-rainbow: #ff86b4;
+
+  /* 움직임 */
+  --dur-fast: 180ms;
+  --dur: 320ms;
+  --dur-slow: 640ms;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --spring: cubic-bezier(.3, 1.25, .5, 1);
+  --spring-bouncy: cubic-bezier(.3, 1.6, .5, 1);
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring: linear(0, 0.063, 0.206, 0.379, 0.549, 0.698, 0.818, 0.907, 0.968, 1.007, 1.028, 1.037, 1.038, 1.034, 1.028, 1.021, 1.015, 1.01, 1.006, 1.003, 1.001, 0.999, 0.999, 0.999, 0.999, 0.999, 1);
+    --spring-bouncy: linear(0, 0.085, 0.283, 0.523, 0.752, 0.937, 1.066, 1.138, 1.163, 1.153, 1.122, 1.084, 1.046, 1.014, 0.992, 0.979, 0.974, 0.975, 0.979, 0.985, 0.992, 0.997, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.001, 1.001, 1, 1, 1);
+  }
+}
+
+/* 기본은 어두운 하늘 위의 흰 글자 */
+body {
+  --ink: #fff;
+  --ink-2: rgba(255, 255, 255, .78);
+  --ink-3: rgba(255, 255, 255, .55);
+  --glass: rgba(255, 255, 255, .14);
+  --glass-2: rgba(255, 255, 255, .24);
+  --glass-line: rgba(255, 255, 255, .26);
+  --text-shadow: 0 1px 16px rgba(8, 20, 60, .34);
+  transition: --ink 900ms var(--ease-out), --ink-2 900ms var(--ease-out), --ink-3 900ms var(--ease-out),
+    --glass 900ms var(--ease-out), --glass-2 900ms var(--ease-out), --glass-line 900ms var(--ease-out);
+}
+
+/* 눈 오는 낮처럼 밝은 하늘에서는 오늘 화면만 남색 글자 */
+body[data-ink="navy"][data-screen="today"] {
+  --ink: #15233f;
+  --ink-2: rgba(21, 35, 63, .76);
+  --ink-3: rgba(21, 35, 63, .54);
+  --glass: rgba(255, 255, 255, .42);
+  --glass-2: rgba(255, 255, 255, .64);
+  --glass-line: rgba(255, 255, 255, .72);
+  --text-shadow: none;
+}

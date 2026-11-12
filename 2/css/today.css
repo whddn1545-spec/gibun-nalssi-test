@@ -1,0 +1,291 @@
+/* 오늘 화면: 하늘 위에 뜬 유리. 가운데는 비워 하늘과 언덕을 보여 준다. */
+
+/* 화면 전체에서 쓰는 크기: 날씨 버튼 줄과 메모 칸의 높이는 고정이라 키보드 올림과 아래 그라데이션을 정확히 맞출 수 있다 */
+#screen-today {
+  --orb-block: 100px;
+  --memo-h: 50px;
+  --memo-off: calc(var(--tabbar-h) + var(--safe-bottom) + 28px + 6px + var(--orb-block));
+}
+
+.today {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--ink);
+}
+
+/* 윗줄 */
+.today-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.today-top-text { padding-top: 6px; min-width: 0; }
+.today-date {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: var(--ink);
+  text-shadow: var(--text-shadow);
+}
+.today-count {
+  min-height: 18px;
+  margin-top: 1px;
+  font-size: 13px;
+  color: var(--ink);
+  text-shadow: var(--text-shadow);
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.today-count.is-on { opacity: 1; }
+.today-settings { flex: none; width: 44px; height: 44px; }
+.today-settings svg { fill: currentColor; stroke: none; }
+
+/* 흰 글자일 때만 위쪽에 아주 은은한 어두운 막을 깔아 글자 대비를 지킨다 */
+#screen-today::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 280px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 16, 44, 0.4), rgba(8, 16, 44, 0.34) 45%, rgba(8, 16, 44, 0.22) 75%, rgba(8, 16, 44, 0));
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+body[data-ink="navy"] #screen-today::before { opacity: 0; }
+
+/* 아래쪽: 초록 언덕 위의 메모 글자, 날씨 이름, 탭바 글자를 위한 어두운 막. 메모 칸 위쪽에서 시작해 아래로 진해진다. */
+#screen-today::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: calc(var(--memo-off) + var(--memo-h) + 4px);
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 18, 48, 0) 0, rgba(8, 18, 48, 0.14) 14%, rgba(8, 18, 48, 0.3) 40%, rgba(8, 18, 48, 0.46) 58%, rgba(8, 18, 48, 0.84) 76%, rgba(8, 18, 48, 0.9) 100%);
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+body[data-ink="navy"] #screen-today::after { opacity: 0; }
+
+/* 밝은 구름 위에서도 흰 글자가 읽히도록 가까운 그림자를 한 겹 더한다 */
+.today :is(.today-date, .today-count, .today-title, .today-line, .orb-name, .slide-hint) {
+  text-shadow: var(--text-shadow), 0 1px 3px rgba(10, 24, 64, 0.2);
+}
+body[data-ink="navy"] .today :is(.today-date, .today-count, .today-title, .today-line, .orb-name, .slide-hint) { text-shadow: none; }
+
+/* 제목 묶음 */
+.today-head { margin-top: 14px; padding-right: 8px; pointer-events: none; }
+.today-title {
+  margin: 0;
+  max-width: 9.5em;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 9cqw, 36px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: var(--ink);
+  text-shadow: var(--text-shadow);
+}
+.today.is-chosen .today-title {
+  max-width: none;
+  font-size: var(--fs-hero);
+  line-height: 1.06;
+}
+.today-line {
+  margin: 8px 0 0;
+  max-width: 19em;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink);
+  text-shadow: var(--text-shadow);
+  text-wrap: pretty;
+}
+.today-line:empty { display: none; }
+
+/* 가운데: 하늘을 본다. 빈 하늘을 누르면 하늘이 반응한다. */
+.today-sky { flex: 1; min-height: 12px; }
+
+/* 아래: 메모와 날씨 고르기 */
+.today-bottom { display: flex; flex-direction: column; gap: 6px; }
+
+.memo-slot {
+  position: relative;
+  height: var(--memo-h);
+  transition: transform 380ms var(--ease-out);
+}
+body.kb-open .memo-slot {
+  transform: translateY(calc(-1 * max(0px, var(--kb) - var(--memo-off) + 12px)));
+}
+
+.memo-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  opacity: 0;
+  transform: translateY(34px) scale(0.95);
+  pointer-events: none;
+  transition: transform var(--dur-slow) var(--spring), opacity var(--dur) var(--ease-out), background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.memo-wrap.is-in {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.memo-wrap:focus-within {
+  background: var(--glass-2);
+  border-color: var(--ink-3);
+}
+.memo-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 22px;
+  border: 0;
+  background: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  caret-color: var(--ink);
+  outline: none;
+}
+/* 무지개 낮에도 4.5:1을 넘도록 흰 글자는 86%로 둔다 */
+.memo-input::placeholder { color: rgba(255, 255, 255, 0.86); font-weight: 400; opacity: 1; }
+body[data-ink="navy"] .memo-input::placeholder { color: rgba(21, 35, 63, 0.76); }
+
+.slide-hint {
+  position: absolute;
+  inset: auto 0 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.slide-hint.is-on { opacity: 1; }
+/* 점은 글자 아래 별도의 줄에서만 움직인다 */
+.slide-hint-track {
+  position: relative;
+  width: 72px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--glass);
+}
+.slide-hint-dot {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  animation: hint-slide 1.5s var(--ease-in-out) infinite alternate;
+}
+@keyframes hint-slide { from { transform: translateX(0); } to { transform: translateX(62px); } }
+
+/* 날씨 고르기 줄 */
+.orbs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: end;
+  align-content: end;
+  height: var(--orb-block);
+  padding-top: 24px;
+  touch-action: none;
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--spring);
+}
+body.kb-open .orbs { opacity: 0; transform: translateY(26px); pointer-events: none; }
+
+.orb {
+  --s: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  color: var(--ink);
+  touch-action: none;
+}
+.orb[aria-checked="true"] { --s: 1.14; }
+
+.orb-disc {
+  display: grid;
+  place-items: center;
+  width: min(54px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(8, 16, 48, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  transform: scale(var(--s));
+  transform-origin: 50% 100%;
+  transition: transform 460ms var(--spring), background var(--dur) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.orb-disc img { width: 70%; height: 70%; pointer-events: none; }
+
+.orb[aria-checked="true"] .orb-disc {
+  background: var(--glass-2);
+  border-color: color-mix(in srgb, var(--c) 55%, #fff);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--c) 70%, #fff),
+    0 0 26px color-mix(in srgb, var(--c) 70%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.orb-name {
+  font-size: var(--fs-cap);
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--ink-2);
+  text-shadow: var(--text-shadow);
+  transition: color var(--dur) var(--ease-out);
+}
+.orb[aria-checked="true"] .orb-name,
+.orb.is-near .orb-name { color: var(--ink); }
+
+.orbs.is-dragging .orb-disc {
+  transition: transform 120ms var(--ease-out), background var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+.orb:focus-visible { outline: none; } /* 포커스 표시는 원판 하나만 */
+.orb:focus-visible .orb-disc { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* 눈 오는 낮처럼 남색 글자일 때는 고른 표시를 진한 고리로 또렷하게 한다 */
+body[data-ink="navy"] .orb[aria-checked="true"] .orb-disc {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2.5px var(--ink), 0 8px 20px rgba(21, 35, 63, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 흰 글자일 때는 메모 칸과 날씨 버튼 유리에 옅은 남색을 더해 칸 스스로 대비를 갖게 한다 */
+body:not([data-ink="navy"]) .memo-wrap {
+  background-image: linear-gradient(rgba(10, 24, 60, 0.5), rgba(10, 24, 60, 0.5));
+}
+body:not([data-ink="navy"]) .orb-disc {
+  background-image: linear-gradient(rgba(10, 24, 60, 0.34), rgba(10, 24, 60, 0.34));
+}
+body:not([data-ink="navy"]) .orb[aria-checked="true"] .orb-disc {
+  background-image: linear-gradient(rgba(10, 24, 60, 0.22), rgba(10, 24, 60, 0.22));
+}
+
+/* 키 작은 화면 (360x640): 간격을 줄여 핵심이 모두 보이게 한다 */
+@container (max-height: 700px) {
+  .today-head { margin-top: 8px; }
+  .today-line { font-size: 16px; margin-top: 6px; }
+  .today.is-chosen .today-title { font-size: clamp(42px, 13cqw, 52px); }
+  #screen-today { --orb-block: 90px; --memo-h: 46px; }
+  .orbs { padding-top: 18px; }
+  .orb-disc { width: min(50px, 100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-hint-dot { animation: none; left: 32px; }
+}

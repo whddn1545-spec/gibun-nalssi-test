@@ -1,0 +1,34 @@
+{
+  "name": "기분날씨",
+  "short_name": "기분날씨",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1726",
+  "theme_color": "#0F1726",
+  "lang": "ko",
+  "dir": "ltr",
+  "description": "하루 기분을 날씨로 남기는 기록 앱이에요.",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
