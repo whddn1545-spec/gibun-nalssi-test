@@ -1,6 +1,6 @@
 // 기분날씨 — 앱 시작과 화면 연결
 import * as store from './store.js';
-import { WEATHERS, WEATHER_IDS, W, FEELINGS, FEEL_LABEL, FEEL_MAX, FEEL_REPLY, ALL_FEELINGS, INIT_PH, pickedLine, againLine, greetLine, tapLine, remindText, ro, specialDay } from './weather.js';
+import { WEATHERS, WEATHER_IDS, W, FEELINGS, FEEL_LABEL, FEEL_MAX, feelReply, toneOf, ALL_FEELINGS, INIT_PH, pickedLine, againLine, greetLine, tapLine, remindText, ro, specialDay } from './weather.js';
 import { memoReply, rememberLine, recentLines } from './talk.js';
 import * as D from './dates.js';
 import { icon, TONE } from './icons.js';
@@ -205,7 +205,10 @@ $('#feel-chips').addEventListener('click', (ev) => {
   const added = next.includes(c.dataset.feel);
   renderTodayFeel();
   if (added) {
-    say(FEEL_REPLY[c.dataset.feel] || '마음을 알려 줘서 고마워요');
+    // 날씨와 마음이 엇갈리거나, 일주일 새 같은 마음이 또 나오면 그 이야기를 한다
+    const fl = feelReply(c.dataset.feel, { w: store.getEntry(app.todayK)?.w || '', ctx: lineCtx(), exclude: recentLines() });
+    rememberLine(fl);
+    say(fl);
     scene.react();
   }
   afterChange(app.todayK, { skipToday: true });
@@ -214,8 +217,24 @@ $('#feel-chips').addEventListener('click', (ev) => {
 // ================================================================ 몽글이 대사
 let typeT = 0;
 let greetT = 0; // 켜자마자의 인사(0.7초 뒤) — 그 전에 다른 말을 하면 취소한다
+let sayAt = 0; // 지금 하는 말을 시작한 때와 글자 수 — 다음 말은 이 말을 다 읽을 시간을 준 뒤에 한다
+let sayLen = 0;
+const holdMs = () => 700 + sayLen * 65; // 한 글자씩 나오는 시간(30ms) + 읽는 시간(35ms)
+const talking = () => Date.now() < sayAt + holdMs();
+/** ms 뒤에, 그리고 지금 하는 말을 다 읽을 시간이 지난 뒤에 fn을 부른다(축하·선물·친해짐 말이 앞말을 덮지 않게) */
+function sayAfter(ms, fn) {
+  setTimeout(function tick() {
+    const wait = sayAt + holdMs() - Date.now();
+    if (wait > 60) { setTimeout(tick, wait); return; }
+    fn();
+  }, ms);
+}
 function say(text, { instant = false } = {}) {
   clearTimeout(greetT);
+  // 대사는 '짧은 말|덧붙이는 말' — 보통은 이어서, '차분하게'에서는 짧은 말만(끝의 마침표는 뗀다)
+  text = isCalm() ? String(text).split('|')[0].trim().replace(/\.$/, '') : String(text).replace(/\s*\|\s*/g, ' ');
+  sayAt = Date.now();
+  sayLen = Array.from(text).length;
   const ghost = $('#talk-ghost');
   const live = $('#talk-live');
   const talk = $('#talk');
@@ -279,7 +298,7 @@ function renderGreeting(w, { animate = false } = {}) {
 
 function greetCtx() {
   const y = store.getEntry(D.keyOf(D.addDays(D.parseKey(app.todayK), -1)));
-  return { birthday: store.getMeta('birthday') || '', yesterday: y, lateNight: D.isLateNight() };
+  return { birthday: store.getMeta('birthday') || '', yesterday: y, lateNight: D.isLateNight(), gap: lineCtx().gap, key: app.todayK };
 }
 function todayLine() {
   const e = store.getEntry(app.todayK);
@@ -287,8 +306,8 @@ function todayLine() {
   if (!$('#weekly-banner').hidden && !e) return '지난주 일기예보가 도착했어요! 편지를 눌러 봐요';
   if (!$('#gift-banner').hidden) return '선물이 도착했어요! 눌러서 열어 봐요';
   if (!e) return greetLine(new Date(), greetCtx());
-  if (e.m) return `‘${short(e.m, 13)}’ 잘 간직하고 있어요`;
-  return againLine(e.w, app.todayK);
+  // 아까 남긴 메모·마음을 기억해 묻거나, 날씨에 맞는 말
+  return againLine(e.w, lineCtx(e.w));
 }
 
 function renderSaved() {
@@ -298,16 +317,49 @@ function renderSaved() {
   $('#saved-text').textContent = n >= 2 ? `연속 ${n}일째` : '저장됨';
 }
 
-/** 고른 순간의 말에 필요한 것: 어제 기록, 어제까지 같은 날씨가 이어진 날 수, 밤인지 */
+/**
+ * 몽글이 말에 쓰는 오늘의 상황: 시각·요일·계절·특별한 날, 어제 기록, 같은 날씨가 이어진 날 수,
+ * 어제까지 7일의 날씨 결·마음 단어 수, 마지막 기록이 며칠 전인지(오랜만인지), 연속 기록, 오늘 메모·마음
+ */
 function lineCtx(w) {
-  const yk = D.addDays(D.parseKey(app.todayK), -1);
+  const today = D.parseKey(app.todayK);
+  const yk = D.addDays(today, -1);
   const prev = store.getEntry(D.keyOf(yk));
   let runBefore = 0;
-  if (prev && prev.w === w) {
+  if (w && prev && prev.w === w) {
     let d = yk;
     while (store.getEntry(D.keyOf(d))?.w === w) { runBefore++; d = D.addDays(d, -1); }
   }
-  return { key: app.todayK, night: document.body.dataset.phase === 'night', prev, runBefore };
+  const week = { good: 0, mid: 0, bad: 0 };
+  const weekFeel = {};
+  for (let i = 1; i <= 7; i++) {
+    const r = store.getEntry(D.keyOf(D.addDays(today, -i)));
+    if (!r) continue;
+    week[toneOf(r.w)]++;
+    for (const f of r.f || []) weekFeel[f] = (weekFeel[f] || 0) + 1;
+  }
+  const e = store.getEntry(app.todayK);
+  let gap = 0; // 처음 쓰는 사람은 0
+  if (store.count() > (e ? 1 : 0)) {
+    gap = 121;
+    for (let i = 1; i <= 120; i++) if (store.getEntry(D.keyOf(D.addDays(today, -i)))) { gap = i; break; }
+  }
+  const now = new Date();
+  return {
+    key: app.todayK, night: document.body.dataset.phase === 'night', lateNight: D.isLateNight(now),
+    hour: now.getHours(), dow: today.getDay(), month: today.getMonth() + 1,
+    special: specialDay(today, store.getMeta('birthday') || ''),
+    prev, runBefore, week, weekFeel, gap,
+    streak: e ? store.streak(app.todayK, D.keyOf, D.addDays, D.parseKey) : 0,
+    memo: e?.m || '', feel: e?.f || [],
+  };
+}
+/** 몽글이를 누르거나 같은 날씨를 또 눌렀을 때의 말 */
+function tapSay(w) {
+  const c = lineCtx(w);
+  const line = tapLine(w, new Date(), recentLines(), { feel: c.feel, streak: c.streak });
+  rememberLine(line);
+  say(line);
 }
 
 function pickToday(w) {
@@ -317,7 +369,7 @@ function pickToday(w) {
   buzz(w);
   if (prev && prev.w === w) {
     scene.react();
-    say(tapLine(w));
+    tapSay(w);
     return;
   }
   const first = store.count() === 0;
@@ -356,23 +408,23 @@ function pickToday(w) {
   }
   const giftNow = !prev && pendingGifts().length > giftsBefore;
   if (first) {
-    // 몽글이의 공감 한마디를 먼저 충분히 보여 주고(2.6초), 그다음 축하·선물. 알림은 이때 묻지 않는다.
+    // 몽글이의 공감 한마디를 먼저 다 읽을 시간을 주고(2.6초 이상), 그다음 축하·선물. 알림은 이때 묻지 않는다.
     store.requestPersistence();
     app.celebrating = true;
-    setTimeout(() => {
+    sayAfter(2600, () => {
       app.celebrating = false;
       if (app.tab === 'today' && !isCalm()) {
         confetti($('#sky'));
         say(giftNow ? '첫 날씨를 남겼어요! 작은 선물이 도착했어요' : '첫 날씨를 남겼어요! 내일도 하늘 보러 와요');
       }
       renderLetters();
-    }, 2600);
+    });
   } else if (!prev) {
     celebrateStreak(giftNow);
-    if (giftNow) setTimeout(() => renderLetters({ announce: !isCalm() }), 1900);
+    if (giftNow) sayAfter(1900, () => renderLetters({ announce: !isCalm() }));
     const lv = levelUpLine(heartsBefore);
-    if (lv && !giftNow) setTimeout(() => { if (app.tab === 'today') { say(lv); heartPop(); } }, 2100);
-    else if (store.count() === 4 && !giftNow && !isCalm()) setTimeout(() => { if (app.tab === 'today') say('기록 4일! 달력 아래 돌아보기에 마음 흐름이 그려졌어요'); }, 2400);
+    if (lv && !giftNow) sayAfter(2100, () => { if (app.tab === 'today') { say(lv); heartPop(); } });
+    else if (store.count() === 4 && !giftNow && !isCalm()) sayAfter(2400, () => { if (app.tab === 'today') say('기록 4일! 달력 아래 돌아보기에 마음 흐름이 그려졌어요'); });
     maybeAskRemind({ delay: 3200 });
   }
   if (!prev) scheduleRemind();
@@ -420,9 +472,9 @@ function petToday() {
 // 몽글이(하늘)를 누르면 찌그러지며 말을 건다. 하루에 처음 누르면 하트가 쌓인다.
 $('#sky-in').addEventListener('click', () => {
   buzz('tap');
-  const line = petToday() || tapLine(scene.weather, new Date(), recentLines());
-  rememberLine(line);
-  say(line);
+  const pet = petToday();
+  if (pet) say(pet);
+  else tapSay(scene.weather);
 });
 
 // 연속 기록 축하 (3·7·14일…)
@@ -430,7 +482,7 @@ const MILESTONES = [3, 7, 14, 21, 30, 50, 100, 200, 365];
 function celebrateStreak(giftNow) {
   const n = store.streak(app.todayK, D.keyOf, D.addDays, D.parseKey);
   if (!MILESTONES.includes(n) || isCalm()) return;
-  setTimeout(() => {
+  sayAfter(1700, () => {
     if (app.tab !== 'today') return;
     if (!giftNow) say(n >= 30 ? `${n}일 연속이라니! 몽글이가 정말 감동했어요` : `와, ${n}일 연속 기록이에요! 매일 와 줘서 고마워요`);
     const chip = $('#saved');
@@ -520,7 +572,7 @@ function memoReplyFor(m) {
     const r = store.getEntry(k);
     if (r && r.m) recent.push({ k, m: r.m, w: r.w });
   }
-  return memoReply(m, e ? e.w : 'cloudy', recent, app.todayK);
+  return memoReply(m, e ? e.w : 'cloudy', recent, app.todayK, lineCtx(e?.w));
 }
 
 // 키보드가 떠 있는 동안만 아래 탭바를 숨긴다 (키보드 위에 뜨지 않게).
@@ -1316,7 +1368,7 @@ function maybeAskRemind({ delay = 0 } = {}) {
   if (r0.asked || store.count() < 1) return false;
   clearTimeout(askTimer);
   let tries = 0;
-  const busy = () => isTextFocused() || document.documentElement.classList.contains('has-sheet') || intro.open || app.tab !== 'today' || app.celebrating;
+  const busy = () => isTextFocused() || document.documentElement.classList.contains('has-sheet') || intro.open || app.tab !== 'today' || app.celebrating || talking();
   const attempt = () => {
     if (remindPref().asked) return;
     if (busy()) {

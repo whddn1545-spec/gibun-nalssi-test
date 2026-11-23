@@ -144,7 +144,7 @@ body[data-w=thunder] .flash{animation:flash 3.4s linear infinite}
 .talk-name{position:absolute;left:12px;top:-14px;padding:4px 11px 5px;border-radius:99px;
   background:var(--accent);border:2.5px solid #FFFDF8;font-size:calc(12px * var(--fs,1));font-weight:800;line-height:1.2;color:var(--ink);
   transform:rotate(-4deg);transition:background-color .6s ease;box-shadow:0 2px 0 rgba(110,72,44,.12);white-space:nowrap}
-.talk-text{position:relative;margin:0;font-size:calc(14.5px * var(--fs,1));line-height:1.45;letter-spacing:-.015em;font-weight:500;max-height:2.9em;overflow:hidden}
+.talk-text{position:relative;margin:0;font-size:calc(14.5px * var(--fs,1));line-height:1.45;letter-spacing:-.015em;font-weight:500;max-height:4.4em;overflow:hidden}
 .talk-ghost{visibility:hidden}
 .talk-live{position:absolute;inset:0}
 

@@ -1,7 +1,7 @@
 // 기분날씨 서비스 워커: 앱 파일을 미리 저장해 인터넷 없이도 열리게 한다.
 // 아래 두 줄은 tools/update_sw.py가 자동으로 고친다.
 /* @generated-start */
-const VERSION = '2de15030ec';
+const VERSION = '7639307a19';
 const FILES = ["./", "./css/app.css", "./fonts/LICENSE-Pretendard.txt", "./fonts/Pretendard-Bold.subset.woff2", "./fonts/Pretendard-ExtraBold.subset.woff2", "./fonts/Pretendard-Medium.subset.woff2", "./icons/apple-touch-icon.png", "./icons/favicon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./index.html", "./js/art.js", "./js/card.js", "./js/config.js", "./js/dates.js", "./js/forecast-text.js", "./js/icons.js", "./js/info.js", "./js/insights.js", "./js/install.js", "./js/main.js", "./js/native.js", "./js/scene.js", "./js/store.js", "./js/talk.js", "./js/ui.js", "./js/wardrobe.js", "./js/weather.js", "./manifest.webmanifest"];
 /* @generated-end */
 
@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (req.mode === 'navigate') {
-    // 앱 첫 페이지만 맡는다(같은 주소 아래의 다른 페이지는 그대로 네트워크로)
+    // 앱 첫 페이지만 맡는다(같은 주소 아래의 다른 페이지 — 예: 개인정보처리방침 — 는 그대로 네트워크로)
     const root = new URL('./', self.registration.scope).pathname;
     if (url.pathname !== root && url.pathname !== `${root}index.html`) return;
     // 화면 요청: 저장해 둔 앱 화면을 먼저 보여 주고, 뒤에서 새 버전을 받아 둔다.
