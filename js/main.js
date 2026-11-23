@@ -1,7 +1,7 @@
 // 기분날씨 — 앱 시작과 화면 연결
 import * as store from './store.js';
 import { WEATHERS, WEATHER_IDS, W, FEELINGS, FEEL_LABEL, FEEL_MAX, feelReply, toneOf, ALL_FEELINGS, INIT_PH, pickedLine, againLine, greetLine, tapLine, remindText, ro, specialDay } from './weather.js';
-import { memoReply, rememberLine, recentLines } from './talk.js';
+import { memoReply, rememberLine, recentLines, isCrisis } from './talk.js';
 import * as D from './dates.js';
 import { icon, TONE } from './icons.js';
 import { sceneSVG, friendSVG } from './art.js';
@@ -13,6 +13,7 @@ import * as install from './install.js';
 import * as N from './native.js';
 import { ITEMS, ITEM, wearSVG, wearList, toggleWear, unlockedBy, newGifts, nextItem } from './wardrobe.js';
 import { renderInsights } from './insights.js';
+import { fortune } from './fortune.js';
 import { APP, LINKS } from './config.js';
 import { INFO } from './info.js';
 
@@ -221,6 +222,17 @@ let sayAt = 0; // 지금 하는 말을 시작한 때와 글자 수 — 다음 �
 let sayLen = 0;
 const holdMs = () => 700 + sayLen * 65; // 한 글자씩 나오는 시간(30ms) + 읽는 시간(35ms)
 const talking = () => Date.now() < sayAt + holdMs();
+// 힘들다는 메모(위험한 말)를 받은 뒤 3분은 축하·꽃가루·알림 묻기를 하지 않는다
+let gentleUntil = 0;
+const gentle = () => Date.now() < gentleUntil;
+/** 메모에 답하고, 위험한 말이면 도움받을 곳을 함께 알린다 */
+function replyMemo(m) {
+  say(memoReplyFor(m));
+  if (isCrisis(m)) {
+    gentleUntil = Date.now() + 180000;
+    notify('24시간 자살예방상담전화 109 · 정신건강위기상담전화 1577-0199', { duration: 9000 });
+  }
+}
 /** ms 뒤에, 그리고 지금 하는 말을 다 읽을 시간이 지난 뒤에 fn을 부른다(축하·선물·친해짐 말이 앞말을 덮지 않게) */
 function sayAfter(ms, fn) {
   setTimeout(function tick() {
@@ -389,7 +401,9 @@ function pickToday(w) {
   scene.set(w);
   markPicker($('#today-picker'), w);
   $('#today-picker').classList.remove('is-first');
-  say(pickedLine(w, lineCtx(w)));
+  // 메모를 먼저 쓰고 날씨를 골랐으면 쓴 말에 맞춰 답한다
+  if (withMemo) replyMemo(typed);
+  else say(pickedLine(w, lineCtx(w)));
   $('#memo-input').placeholder = W[w].ph;
   updateMemoUI();
   renderSaved();
@@ -404,7 +418,7 @@ function pickToday(w) {
     app.memoDraft = null;
     $('#memo-input').value = typed;
     updateMemoUI();
-    notify('한 줄 메모도 함께 남겼어요');
+    if (!isCrisis(typed)) notify('한 줄 메모도 함께 남겼어요'); // 위험한 말이면 도움받을 곳 안내를 가리지 않게
   }
   const giftNow = !prev && pendingGifts().length > giftsBefore;
   if (first) {
@@ -413,7 +427,7 @@ function pickToday(w) {
     app.celebrating = true;
     sayAfter(2600, () => {
       app.celebrating = false;
-      if (app.tab === 'today' && !isCalm()) {
+      if (app.tab === 'today' && !isCalm() && !gentle()) {
         confetti($('#sky'));
         say(giftNow ? '첫 날씨를 남겼어요! 작은 선물이 도착했어요' : '첫 날씨를 남겼어요! 내일도 하늘 보러 와요');
       }
@@ -421,10 +435,10 @@ function pickToday(w) {
     });
   } else if (!prev) {
     celebrateStreak(giftNow);
-    if (giftNow) sayAfter(1900, () => renderLetters({ announce: !isCalm() }));
+    if (giftNow) sayAfter(1900, () => renderLetters({ announce: !isCalm() && !gentle() }));
     const lv = levelUpLine(heartsBefore);
-    if (lv && !giftNow) sayAfter(2100, () => { if (app.tab === 'today') { say(lv); heartPop(); } });
-    else if (store.count() === 4 && !giftNow && !isCalm()) sayAfter(2400, () => { if (app.tab === 'today') say('기록 4일! 달력 아래 돌아보기에 마음 흐름이 그려졌어요'); });
+    if (lv && !giftNow) sayAfter(2100, () => { if (app.tab === 'today' && !gentle()) { say(lv); heartPop(); } });
+    else if (store.count() === 4 && !giftNow && !isCalm()) sayAfter(2400, () => { if (app.tab === 'today' && !gentle()) say('기록 4일! 달력 아래 돌아보기에 마음 흐름이 그려졌어요'); });
     maybeAskRemind({ delay: 3200 });
   }
   if (!prev) scheduleRemind();
@@ -481,7 +495,7 @@ $('#sky-in').addEventListener('click', () => {
 const MILESTONES = [3, 7, 14, 21, 30, 50, 100, 200, 365];
 function celebrateStreak(giftNow) {
   const n = store.streak(app.todayK, D.keyOf, D.addDays, D.parseKey);
-  if (!MILESTONES.includes(n) || isCalm()) return;
+  if (!MILESTONES.includes(n) || isCalm() || gentle()) return;
   sayAfter(1700, () => {
     if (app.tab !== 'today') return;
     if (!giftNow) say(n >= 30 ? `${n}일 연속이라니! 몽글이가 정말 감동했어요` : `와, ${n}일 연속 기록이에요! 매일 와 줘서 고마워요`);
@@ -559,7 +573,8 @@ $('#memo-form').addEventListener('submit', (ev) => {
   updateMemoUI();
   buzz('success');
   // 알림 대신 버튼('저장됨')과 몽글이 말로 알려 준다 (제목을 가리지 않게)
-  say(v ? memoReplyFor(v) : '메모는 지웠어요. 날씨는 그대로예요');
+  if (v) replyMemo(v);
+  else say('메모는 지웠어요. 날씨는 그대로예요');
   scene.react();
 });
 
@@ -606,6 +621,7 @@ function lastWeekInfo() {
 const pendingGifts = () => newGifts(store.count(), store.getMeta('seenGifts') || []);
 
 function renderLetters({ announce = false } = {}) {
+  renderFortuneBtn();
   const pend = app.celebrating ? [] : pendingGifts();
   // 새 선물은 도착한 날(기록하는 날)에만 편지로 알린다. 그 뒤로는 옷장 버튼의 점만 남겨 인사·예보 편지를 가리지 않는다.
   let gd = store.getMeta('giftDay') || {};
@@ -1368,7 +1384,7 @@ function maybeAskRemind({ delay = 0 } = {}) {
   if (r0.asked || store.count() < 1) return false;
   clearTimeout(askTimer);
   let tries = 0;
-  const busy = () => isTextFocused() || document.documentElement.classList.contains('has-sheet') || intro.open || app.tab !== 'today' || app.celebrating || talking();
+  const busy = () => isTextFocused() || document.documentElement.classList.contains('has-sheet') || intro.open || app.tab !== 'today' || app.celebrating || talking() || gentle();
   const attempt = () => {
     if (remindPref().asked) return;
     if (busy()) {
@@ -1692,6 +1708,84 @@ $('#reset-confirm').addEventListener('click', () => {
   $('#reset-confirm-row').hidden = true;
   notify(ok ? '모든 기록을 지웠어요' : '지우지 못했어요. 다시 시도해 주세요', { tone: ok ? '' : 'warn' });
   refreshAll();
+});
+
+// ================================================================ 몽글이의 오늘의 운세
+// 하루 한 번 재미로 보는 쪽지. 날짜 + 사람마다 정해 둔 씨앗으로 하루 동안은 같은 운세(fortune.js).
+let fortuneFirst = false; // 오늘 처음 본 운세면 닫을 때 몽글이가 한마디
+function fortuneSeed() {
+  const f = store.getMeta('fortune') || {};
+  if (Number.isInteger(f.seed)) return f.seed;
+  const seed = Math.floor(Math.random() * 1e9);
+  store.setMeta('fortune', { ...f, seed });
+  return seed;
+}
+function todayFortune() {
+  const c = lineCtx();
+  return fortune(app.todayK, fortuneSeed(), { count: store.count(), hard: c.week.bad, special: c.special, dow: c.dow });
+}
+function renderFortuneBtn() {
+  const unseen = (store.getMeta('fortune') || {}).seen !== app.todayK;
+  $('#fortune-dot').hidden = !unseen;
+  $('#fortune-btn').setAttribute('aria-label', unseen ? '몽글이의 오늘의 운세 보기, 새 운세가 있어요' : '몽글이의 오늘의 운세 보기');
+}
+function fillFortune(ft) {
+  $('#fortune-title').textContent = ft.sky;
+  $('#fortune-word').textContent = ft.word;
+  $('#fortune-swatch').style.background = ft.color.hex;
+  $('#fortune-color').textContent = ft.color.name;
+  const it = $('#fortune-item');
+  it.textContent = ft.item.name;
+  if (!ft.itemOpen) {
+    const lock = document.createElement('span');
+    lock.className = 'fortune-lock';
+    lock.textContent = `기록 ${ft.item.need}일이면 열려요`;
+    it.append(' ', lock);
+  }
+  $('#fortune-time').textContent = ft.time;
+  $('#fortune-mission').textContent = ft.mission;
+  const worn = wearing().includes(ft.item.id);
+  // 행운의 소품을 입은 모습을 미리 보여 준다(열린 소품일 때만)
+  const preview = ft.itemOpen && !worn ? toggleWear(wearing(), ft.item.id) : wearing();
+  $('#fortune-art').innerHTML = friendSVG(store.getEntry(app.todayK)?.w || 'sunny', 140, preview);
+  $('#fortune-wear').hidden = !(ft.itemOpen && !worn);
+}
+const fortuneSheet = createSheet($('#fortune-sheet'), {
+  onClose: () => {
+    if (!fortuneFirst) return;
+    fortuneFirst = false;
+    const ft = todayFortune();
+    if (app.tab === 'today') setTimeout(() => say(`오늘은 '${ft.sky}'${josa(ft.sky, '이래요', '래요')}!|행운의 색은 ${ft.color.name}${josa(ft.color.name, '이에요', '예요')}`), 250);
+  },
+});
+$('#fortune-btn').addEventListener('click', () => {
+  buzz('select');
+  const seed = fortuneSeed();
+  const f = store.getMeta('fortune') || {};
+  fortuneFirst = f.seen !== app.todayK;
+  store.setMeta('fortune', { ...f, seed, seen: app.todayK });
+  fillFortune(todayFortune());
+  renderFortuneBtn();
+  fortuneSheet.open();
+});
+$('#fortune-wear').addEventListener('click', () => {
+  const ft = todayFortune();
+  if (!ft.itemOpen) return;
+  const next = wearing().includes(ft.item.id) ? wearing() : toggleWear(wearing(), ft.item.id);
+  if (!store.setMeta('wear', next)) {
+    notify('저장 공간이 부족해 바꾸지 못했어요', { tone: 'warn' });
+    return;
+  }
+  buzz('success');
+  renderWear();
+  fortuneFirst = false; // 아래 말로 대신한다
+  fortuneSheet.close();
+  if (app.tab === 'today') {
+    setTimeout(() => {
+      say(`행운의 ${ft.item.name}${josa(ft.item.name, '을', '를')} 입었어요!|오늘 좋은 일이 생길 것 같아요`);
+      scene.react();
+    }, 250);
+  }
 });
 
 // 정보: 개인정보처리방침 · 도움말 · 라이선스

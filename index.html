@@ -252,6 +252,10 @@ setTimeout(function () { try { var c = window.Capacitor; if (c && c.Plugins && c
         <span class="letter__text">홈 화면에 추가</span>
       </button>
       </div>
+      <button type="button" class="fortune-btn" id="fortune-btn" aria-label="몽글이의 오늘의 운세 보기">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.3 5 5.4.6-4 3.7 1.1 5.4L12 15.2l-4.8 2.7 1.1-5.4-4-3.7 5.4-.6z" fill="#FFC94F" stroke="#46352D" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="18.6" r="1.6" fill="#FF97A5"/><circle cx="4.6" cy="19.4" r="1.1" fill="#8EC7F2"/></svg>
+        <span>운세</span><i class="fortune-btn__dot" id="fortune-dot" aria-hidden="true" hidden></i>
+      </button>
       <div class="talk" id="talk">
         <span class="talk-name">몽글이</span>
         <p class="talk-text"><span class="talk-ghost" id="talk-ghost" aria-hidden="true">오늘 마음에 맞는 날씨를 골라 줄래요?</span><span class="talk-live" id="talk-live" aria-hidden="true"></span><span class="sr-only" id="talk-sr" aria-live="polite"></span></p>
@@ -545,6 +549,30 @@ setTimeout(function () { try { var c = window.Capacitor; if (c && c.Plugins && c
       <button type="button" class="btn btn--coral" id="remind-yes">좋아요, 알려 줘요</button>
       <button type="button" class="btn btn--text" id="remind-no">나중에 할게요</button>
     </div>
+  </div>
+</div>
+
+<!-- ============================== 몽글이의 오늘의 운세 -->
+<div class="sheet" id="fortune-sheet" role="dialog" aria-modal="true" aria-labelledby="fortune-title" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel" tabindex="-1">
+    <div class="sheet__grip" data-drag><span></span></div>
+    <header class="sheet__head" data-drag>
+      <div><p class="sheet__kicker">몽글이의 오늘의 운세</p><h2 class="sheet__title" id="fortune-title">오늘의 하늘</h2></div>
+      <button type="button" class="round-btn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+    </header>
+    <div class="fortune-art" id="fortune-art" aria-hidden="true"></div>
+    <p class="fortune-word" id="fortune-word"></p>
+    <dl class="fortune-list">
+      <div><dt>행운의 색</dt><dd><i class="fortune-swatch" id="fortune-swatch" aria-hidden="true"></i><span id="fortune-color"></span></dd></div>
+      <div><dt>행운의 소품</dt><dd id="fortune-item"></dd></div>
+      <div><dt>행운의 시간</dt><dd id="fortune-time"></dd></div>
+      <div><dt>작은 미션</dt><dd id="fortune-mission"></dd></div>
+    </dl>
+    <div class="sheet__actions sheet__actions--stack">
+      <button type="button" class="btn btn--coral" id="fortune-wear" hidden>행운의 소품 입혀 주기</button>
+    </div>
+    <p class="fortune-note">재미로 보는 운세예요. 날마다 새로 나와요.</p>
   </div>
 </div>
 

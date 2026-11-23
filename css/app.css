@@ -951,3 +951,23 @@ html[data-paper=sky] body[data-w]{--paper:#EAF3FB}
   .fs-xl .wicon{width:28px;height:28px}
   .fs-xl .sky{min-height:118px}
 }
+
+/* ================================================================ 몽글이의 오늘의 운세 */
+.fortune-btn{position:absolute;z-index:5;top:14px;right:14px;display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 12px 0 9px;
+  border:2px solid var(--edge);border-radius:99px;background:#FFFDF8;color:var(--ink);font:inherit;font-size:calc(12.5px * var(--fs,1));font-weight:800;
+  box-shadow:0 3px 0 var(--edge-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fortune-btn svg{width:20px;height:20px;flex:none}
+.fortune-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--edge-2)}
+.fortune-btn__dot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#FF8B6D;border:2px solid #FFFDF8}
+.fortune-btn__dot[hidden]{display:none}
+@media (max-height:720px){.fortune-btn{top:10px;right:10px}}
+.fs-xl .fortune-btn{font-size:14px}
+.fortune-art{display:grid;place-items:center;height:124px;margin:-6px 0 0}
+.fortune-word{margin:2px 4px 14px;text-align:center;font-size:calc(15px * var(--fs,1));line-height:1.55;color:var(--ink);font-weight:600;text-wrap:pretty}
+.fortune-list{display:grid;gap:8px;margin:0 0 14px;padding:0}
+.fortune-list > div{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:16px;background:#FFF6EC;border:1.5px solid var(--edge)}
+.fortune-list dt{flex:none;min-width:5.6em;font-size:calc(13px * var(--fs,1));font-weight:700;color:var(--ink-2)}
+.fortune-list dd{margin:0;display:flex;align-items:center;gap:8px;font-size:calc(15px * var(--fs,1));font-weight:700;color:var(--ink);line-height:1.4}
+.fortune-swatch{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--edge)}
+.fortune-lock{font-weight:600;color:var(--ink-2);font-size:calc(13px * var(--fs,1))}
+.fortune-note{margin:10px 0 0;text-align:center;font-size:calc(12.5px * var(--fs,1));color:var(--ink-2)}
