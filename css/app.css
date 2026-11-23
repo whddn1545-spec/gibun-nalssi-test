@@ -971,3 +971,23 @@ html[data-paper=sky] body[data-w]{--paper:#EAF3FB}
 .fortune-swatch{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--edge)}
 .fortune-lock{font-weight:600;color:var(--ink-2);font-size:calc(13px * var(--fs,1))}
 .fortune-note{margin:10px 0 0;text-align:center;font-size:calc(12.5px * var(--fs,1));color:var(--ink-2)}
+.fortune-sub{margin:-2px 4px 6px;text-align:center;font-size:calc(13px * var(--fs,1));color:var(--ink-2);font-weight:600}
+.fortune-h{margin:6px 2px 8px;font-size:calc(14px * var(--fs,1));font-weight:800;color:var(--ink)}
+.fortune-fields{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+.fortune-fields li{padding:11px 14px;border-radius:16px;background:#FFF6EC;border:1.5px solid var(--edge)}
+.fortune-fields .ff-top{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.fortune-fields .ff-name{font-weight:800;font-size:calc(14px * var(--fs,1));color:var(--ink)}
+.fortune-fields .ff-stars{letter-spacing:1px;color:#E0952A;font-size:calc(13px * var(--fs,1))}
+.fortune-fields .ff-stars i{color:#D9C6B3;font-style:normal}
+.fortune-fields .ff-word{margin-left:auto;font-size:calc(12.5px * var(--fs,1));font-weight:700;color:var(--ink-2)}
+.fortune-fields p{margin:0;font-size:calc(14px * var(--fs,1));line-height:1.5;color:var(--ink)}
+.fortune-lucky{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 6px;padding:0}
+.fortune-lucky > div{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:14px;background:#FFF6EC;border:1.5px solid var(--edge)}
+.fortune-lucky dt{font-size:calc(12.5px * var(--fs,1));font-weight:700;color:var(--ink-2)}
+.fortune-lucky dd{margin:0;display:flex;align-items:center;gap:6px;font-size:calc(15px * var(--fs,1));font-weight:800;color:var(--ink)}
+.fortune-ini{font-size:calc(20px * var(--fs,1));line-height:1}
+.fortune-hint{margin:0 2px 12px;font-size:calc(12.5px * var(--fs,1));color:var(--ink-2);line-height:1.5}
+.fortune-hint[hidden]{display:none}
+.fortune-item{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 10px;border-radius:14px;background:#FFF6EC;border:1.5px solid var(--edge);font-weight:800;font-size:calc(15px * var(--fs,1));color:var(--ink)}
+.fortune-item__label{font-size:calc(12.5px * var(--fs,1));font-weight:700;color:var(--ink-2)}
+.fs-xl .fortune-lucky{grid-template-columns:1fr}

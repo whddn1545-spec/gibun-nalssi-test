@@ -1,7 +1,7 @@
 // 기분날씨 서비스 워커: 앱 파일을 미리 저장해 인터넷 없이도 열리게 한다.
 // 아래 두 줄은 tools/update_sw.py가 자동으로 고친다.
 /* @generated-start */
-const VERSION = 'adda147e40';
+const VERSION = '775e6446d4';
 const FILES = ["./", "./css/app.css", "./fonts/LICENSE-Pretendard.txt", "./fonts/Pretendard-Bold.subset.woff2", "./fonts/Pretendard-ExtraBold.subset.woff2", "./fonts/Pretendard-Medium.subset.woff2", "./icons/apple-touch-icon.png", "./icons/favicon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./index.html", "./js/art.js", "./js/card.js", "./js/config.js", "./js/dates.js", "./js/forecast-text.js", "./js/fortune.js", "./js/icons.js", "./js/info.js", "./js/insights.js", "./js/install.js", "./js/main.js", "./js/native.js", "./js/scene.js", "./js/store.js", "./js/talk.js", "./js/ui.js", "./js/wardrobe.js", "./js/weather.js", "./manifest.webmanifest"];
 /* @generated-end */
 

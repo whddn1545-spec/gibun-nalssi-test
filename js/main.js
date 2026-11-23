@@ -1722,7 +1722,7 @@ function fortuneSeed() {
 }
 function todayFortune() {
   const c = lineCtx();
-  return fortune(app.todayK, fortuneSeed(), { count: store.count(), hard: c.week.bad, special: c.special, dow: c.dow });
+  return fortune(app.todayK, fortuneSeed(), { birthday: store.getMeta('birthday') || '', count: store.count(), hard: c.week.bad, special: c.special });
 }
 function renderFortuneBtn() {
   const unseen = (store.getMeta('fortune') || {}).seen !== app.todayK;
@@ -1730,10 +1730,40 @@ function renderFortuneBtn() {
   $('#fortune-btn').setAttribute('aria-label', unseen ? '몽글이의 오늘의 운세 보기, 새 운세가 있어요' : '몽글이의 오늘의 운세 보기');
 }
 function fillFortune(ft) {
-  $('#fortune-title').textContent = ft.sky;
+  $('#fortune-title').textContent = ft.sign ? `${ft.sign} · ${ft.day.name}` : `오늘은 ${ft.day.name}`;
+  $('#fortune-sub').textContent = ft.sky.split(' · ')[1];
   $('#fortune-word').textContent = ft.word;
+  const ul = $('#fortune-fields');
+  ul.textContent = '';
+  for (const f of ft.fields) {
+    const li = document.createElement('li');
+    const top = document.createElement('div');
+    top.className = 'ff-top';
+    const name = document.createElement('span');
+    name.className = 'ff-name';
+    name.textContent = f.name;
+    const stars = document.createElement('span');
+    stars.className = 'ff-stars';
+    stars.setAttribute('role', 'img');
+    stars.setAttribute('aria-label', `별 3개 중 ${f.lv}개`);
+    stars.innerHTML = `${'★'.repeat(f.lv)}<i>${'★'.repeat(3 - f.lv)}</i>`;
+    const word = document.createElement('span');
+    word.className = 'ff-word';
+    word.textContent = f.word;
+    top.append(name, stars, word);
+    const t = document.createElement('p');
+    t.textContent = f.text;
+    li.append(top, t);
+    ul.append(li);
+  }
   $('#fortune-swatch').style.background = ft.color.hex;
   $('#fortune-color').textContent = ft.color.name;
+  $('#fortune-thing').textContent = ft.thing;
+  $('#fortune-initial').textContent = ft.initial;
+  $('#fortune-ini-hint').textContent = `행운의 초성 '${ft.initial}': ${ft.initialHint}`;
+  $('#fortune-number').textContent = String(ft.number);
+  $('#fortune-dir').textContent = ft.dir;
+  $('#fortune-time').textContent = ft.time;
   const it = $('#fortune-item');
   it.textContent = ft.item.name;
   if (!ft.itemOpen) {
@@ -1742,10 +1772,8 @@ function fillFortune(ft) {
     lock.textContent = `기록 ${ft.item.need}일이면 열려요`;
     it.append(' ', lock);
   }
-  $('#fortune-time').textContent = ft.time;
-  $('#fortune-mission').textContent = ft.mission;
+  $('#fortune-bday-hint').hidden = !!ft.sign;
   const worn = wearing().includes(ft.item.id);
-  // 행운의 소품을 입은 모습을 미리 보여 준다(열린 소품일 때만)
   const preview = ft.itemOpen && !worn ? toggleWear(wearing(), ft.item.id) : wearing();
   $('#fortune-art').innerHTML = friendSVG(store.getEntry(app.todayK)?.w || 'sunny', 140, preview);
   $('#fortune-wear').hidden = !(ft.itemOpen && !worn);
@@ -1755,7 +1783,7 @@ const fortuneSheet = createSheet($('#fortune-sheet'), {
     if (!fortuneFirst) return;
     fortuneFirst = false;
     const ft = todayFortune();
-    if (app.tab === 'today') setTimeout(() => say(`오늘은 '${ft.sky}'${josa(ft.sky, '이래요', '래요')}!|행운의 색은 ${ft.color.name}${josa(ft.color.name, '이에요', '예요')}`), 250);
+    if (app.tab === 'today') setTimeout(() => say(`오늘 총운은 '${ft.fields[0].word}'래요!|행운의 물건은 ${ft.thing}, 행운의 초성은 '${ft.initial}'이에요`), 250);
   },
 });
 $('#fortune-btn').addEventListener('click', () => {
