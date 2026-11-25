@@ -553,6 +553,25 @@
   </div>
 </div>
 
+<!-- ============================== 기록 지키기(백업 권하기) -->
+<div class="sheet" id="backup-sheet" role="dialog" aria-modal="true" aria-labelledby="backup-title" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel" tabindex="-1">
+    <div class="sheet__grip" data-drag><span></span></div>
+    <header class="sheet__head" data-drag>
+      <div><p class="sheet__kicker">기록 지키기</p><h2 class="sheet__title" id="backup-title">기록이 모였어요</h2></div>
+      <button type="button" class="round-btn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+    </header>
+    <div class="remind-art" id="backup-art" aria-hidden="true"></div>
+    <p class="remind-text">몽글이 하늘은 이 폰 안에만 있어요.<br>폰을 바꾸거나 앱을 지우면 사라질 수 있어요.<br>파일로 한 벌 챙겨 두면 언제든 되살릴 수 있어요.</p>
+    <p class="backup-where" id="backup-where"></p>
+    <div class="sheet__actions sheet__actions--stack">
+      <button type="button" class="btn btn--coral" id="backup-yes">지금 백업하기</button>
+      <button type="button" class="btn btn--text" id="backup-no">다음에 할게요</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============================== 몽글이의 오늘의 운세 -->
 <div class="sheet" id="fortune-sheet" role="dialog" aria-modal="true" aria-labelledby="fortune-title" hidden>
   <div class="sheet__backdrop" data-close></div>

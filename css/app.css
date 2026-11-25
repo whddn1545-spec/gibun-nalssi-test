@@ -1001,3 +1001,9 @@ html[data-paper=sky] body[data-w]{--paper:#EAF3FB}
 .memo-field .count{align-self:flex-end;margin-bottom:calc((var(--mh) - 4px - 15px) / 2)}
 @media (max-height:720px){.memo-field{--mh:48px}}
 @media (max-height:600px){.memo-field{--mh:46px}}
+
+/* 기록 지키기 시트: 어디에 두면 좋은지 한 줄 */
+.backup-where{margin:-6px 4px 14px;padding:10px 14px;border-radius:14px;background:#FFF1E4;text-align:center;
+  font-size:calc(13.5px * var(--fs,1));line-height:1.5;font-weight:600;color:var(--ink-2)}
+.backup-where:empty{display:none}
+.remind-text,.backup-where{word-break:keep-all}

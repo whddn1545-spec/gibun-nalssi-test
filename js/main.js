@@ -441,7 +441,7 @@ function pickToday(w) {
     const lv = levelUpLine(heartsBefore);
     if (lv && !giftNow) sayAfter(2100, () => { if (app.tab === 'today' && !gentle()) { say(lv); heartPop(); } });
     else if (store.count() === 4 && !giftNow && !isCalm()) sayAfter(2400, () => { if (app.tab === 'today' && !gentle()) say('기록 4일! 달력 아래 돌아보기에 마음 흐름이 그려졌어요'); });
-    maybeAskRemind({ delay: 3200 });
+    if (!maybeAskRemind({ delay: 3200 })) maybeAskBackup({ delay: 4200, justAdded: true });
   }
   if (!prev) scheduleRemind();
 }
@@ -1533,7 +1533,8 @@ function renderSettings({ denied = false } = {}) {
   $('#install-sub').textContent = inApp ? `${inApp} 밖의 브라우저에서 추가해요` : install.isIOS() ? '두 번만 누르면 끝' : '앱처럼 홈 화면에서 바로 열어요';
   $('#data-count').textContent = `기록 ${store.count()}일 · 이 기기에만 저장`;
   const lb = store.getMeta('lastBackup');
-  $('#backup-sub').textContent = lb ? `마지막 백업 ${D.fmtMD(D.parseKey(lb))} · 파일로 보관` : '아직 백업한 적 없어요 · 파일로 보관';
+  const un = unsavedCount();
+  $('#backup-sub').textContent = lb ? `마지막 백업 ${D.fmtMD(D.parseKey(lb))}${un ? ` · 그 뒤 기록 ${un}일` : ' · 모두 챙겨 둠'}` : store.count() ? `아직 백업한 적 없어요 · 기록 ${store.count()}일` : '파일로 내려받아 안전하게 보관';
   $('#ios-evict-warn').hidden = NATIVE || !(install.isIOS() && !install.isStandalone() && store.count() > 0);
   $('#reset-confirm-row').hidden = true;
   const n = store.count();
@@ -1693,38 +1694,115 @@ $('#haptics-toggle').addEventListener('change', (ev) => {
   if (ev.currentTarget.checked) buzz('success');
 });
 
-$('#backup-export').addEventListener('click', (ev) => withBusy(ev.currentTarget, async () => {
+/** 백업이 끝났다고 표시(언제·몇 일까지 챙겼는지) */
+function markBackedUp() {
+  store.setMeta('lastBackup', app.todayK);
+  store.setMeta('backupN', store.count());
+  renderSettingsIfOpen();
+}
+/** 백업 파일 만들기. 반환: true(저장·보냄) | false(취소·실패·못 하는 곳) */
+async function doBackup() {
   const blob = new Blob([store.exportJSON()], { type: 'application/json' });
   const name = `기분날씨-백업-${app.todayK}.json`;
   if (NATIVE) {
     const r = await N.shareFile(blob, name, { title: '기분날씨 백업' });
     if (r === 'shared') {
-      store.setMeta('lastBackup', app.todayK);
-      renderSettingsIfOpen();
+      markBackedUp();
       notify(`기록 ${store.count()}일을 백업 파일로 보냈어요`);
-    } else if (r !== 'cancel') notify('백업 파일을 만들지 못했어요. 다시 시도해 주세요', { tone: 'warn' });
-    return;
+      return true;
+    }
+    if (r !== 'cancel') notify('백업 파일을 만들지 못했어요. 다시 시도해 주세요', { tone: 'warn' });
+    return false;
   }
   const inApp = install.inAppBrowser();
   if (inApp) {
     notify(`${inApp} 안에서는 파일을 저장할 수 없어요. ⋯ 메뉴 → 다른 브라우저로 열기에서 백업해 주세요`, { tone: 'warn', duration: 5200 });
-    return;
+    return false;
   }
   if (install.isIOS() && install.isStandalone()) {
     const r = await N.shareFile(blob, name, { title: '기분날씨 백업' });
     if (r === 'shared') {
-      store.setMeta('lastBackup', app.todayK);
-      renderSettingsIfOpen();
+      markBackedUp();
       notify(`기록 ${store.count()}일을 백업 파일로 보냈어요`);
-      return;
+      return true;
     }
-    if (r === 'cancel') return;
+    if (r === 'cancel') return false;
   }
   downloadBlob(blob, name);
-  store.setMeta('lastBackup', app.todayK);
-  renderSettingsIfOpen();
+  markBackedUp();
   notify(`기록 ${store.count()}일을 백업 파일로 저장했어요`);
+  return true;
+}
+$('#backup-export').addEventListener('click', (ev) => withBusy(ev.currentTarget, doBackup));
+
+// ---- 백업 권하기: 기록 7·30·100…일째, 그리고 마지막 백업(없으면 첫 기록)에서 30일이 지나면 한 번
+const BACKUP_MILESTONES = [7, 30, 100, 200, 365, 500, 730, 1000];
+const dayGap = (a, b) => Math.round((D.parseKey(a) - D.parseKey(b)) / 864e5);
+/** 마지막 백업 뒤에 새로 생긴 기록 수 */
+function unsavedCount() {
+  const n = store.count();
+  const lb = store.getMeta('lastBackup');
+  if (!lb) return n;
+  let base = store.getMeta('backupN');
+  if (typeof base !== 'number') base = Object.keys(store.entries()).filter((k) => k <= lb).length; // 예전 판에서 한 백업
+  return Math.max(0, n - base);
+}
+/** 지금 백업을 권할 때인가 (justAdded: 방금 새 날을 기록함) */
+function backupDue(justAdded) {
+  if (install.inAppBrowser() && !NATIVE) return false; // 카톡 안 브라우저 등은 파일 저장이 안 된다
+  const n = store.count();
+  const unsaved = unsavedCount();
+  if (n < 7 || unsaved < 7) return false;
+  const ask = store.getMeta('backupAsk') || {};
+  if (ask.k === app.todayK) return false;
+  const sinceAsk = ask.k ? dayGap(app.todayK, ask.k) : Infinity;
+  if (justAdded && BACKUP_MILESTONES.includes(n) && sinceAsk >= 3) return true;
+  const lb = store.getMeta('lastBackup') || Object.keys(store.entries()).sort()[0];
+  return dayGap(app.todayK, lb) >= 30 && sinceAsk >= 14;
+}
+let backupTimer = 0;
+let backupDone = false;
+function maybeAskBackup({ delay = 0, justAdded = false } = {}) {
+  if (!backupDue(justAdded)) return false;
+  clearTimeout(backupTimer);
+  let tries = 0;
+  const busy = () => isTextFocused() || document.documentElement.classList.contains('has-sheet') || intro.open || app.tab !== 'today' || app.celebrating || talking() || gentle();
+  const attempt = () => {
+    if (!backupDue(justAdded)) return;
+    if (busy()) {
+      if (++tries < 40) backupTimer = setTimeout(attempt, 1500);
+      return;
+    }
+    openBackupAsk();
+  };
+  backupTimer = setTimeout(attempt, delay);
+  return true;
+}
+function openBackupAsk() {
+  const n = store.count();
+  const lb = store.getMeta('lastBackup');
+  $('#backup-title').textContent = `기록이 ${n}일 모였어요`;
+  $('#backup-art').innerHTML = friendSVG('sunny', 150, wearing());
+  const share = NATIVE || (install.isIOS() && install.isStandalone());
+  $('#backup-where').textContent = `${lb ? `마지막 백업 뒤로 ${unsavedCount()}일이 더 쌓였어요. ` : ''}${share ? "카톡 '나에게'나 드라이브, 파일 앱에 저장해 두세요" : "내려받은 파일을 드라이브나 카톡 '나에게'로 보내 두면 더 안전해요"}`;
+  backupDone = false;
+  backupSheet.open();
+  return true;
+}
+const backupSheet = createSheet($('#backup-sheet'), {
+  onClose: () => {
+    store.setMeta('backupAsk', { k: app.todayK, n: store.count() });
+    if (backupDone) sayAfter(400, () => say(`기록 ${store.count()}일, 잘 챙겨 뒀어요!|폰을 바꿔도 이 파일로 하늘을 다시 띄울 수 있어요`));
+    else notify('설정 → 기록 백업하기에서 언제든 할 수 있어요');
+  },
+});
+$('#backup-yes').addEventListener('click', (ev) => withBusy(ev.currentTarget, async () => {
+  if (await doBackup()) {
+    backupDone = true;
+    backupSheet.close();
+  }
 }));
+$('#backup-no').addEventListener('click', () => backupSheet.close());
 $('#backup-import-btn').addEventListener('click', () => $('#backup-import').click());
 
 $('#backup-import').addEventListener('change', async (ev) => {
@@ -2100,4 +2178,7 @@ N.onReminderAction((id) => {
     requestAnimationFrame(() => N.hideSplash());
     if (!intro.open) maybeAskRemind({ delay: 2500 });
   }
+  // 웹·앱 모두: 한 달 넘게 백업하지 않았으면 열 때 한 번 권한다(앱에서 알림을 아직 안 물었으면 알림이 먼저)
+  const remindFirst = NATIVE && N.remindAvailable() && !remindPref().asked && store.count() >= 1;
+  if (!intro.open && !remindFirst) maybeAskBackup({ delay: 3000 });
 })();
