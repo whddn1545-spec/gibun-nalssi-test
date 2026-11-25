@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- 보안 정책: 이 앱 파일 말고는 스크립트를 실행하지 않고, 바깥 주소로 아무것도 보내거나 받지 않는다 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' data: blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>기분날씨</title>
 <meta name="description" content="10초 만에 오늘 기분을 날씨로 남기는 나만의 작은 하늘">
@@ -18,8 +20,7 @@
 <link rel="preload" href="fonts/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/app.css">
 <script type="module" src="js/main.js"></script>
-<script>/* 앱: 시작 화면은 첫 화면을 그린 뒤 main.js가 닫는다. 무슨 일이 있어도 4초 뒤에는 닫는다. */
-setTimeout(function () { try { var c = window.Capacitor; if (c && c.Plugins && c.Plugins.SplashScreen) c.Plugins.SplashScreen.hide(); } catch (e) {} }, 4000);</script>
+<script src="js/splash-guard.js"></script>
 </head>
 <body data-w="initial">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">

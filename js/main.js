@@ -82,9 +82,11 @@ function systemFontScale() {
     return 1;
   }
 }
+/** 글씨 크기 값을 1 · 1.15 · 1.3 중 하나로 맞춘다 */
+const fontStep = (v) => { const n = Number(v) || 1; return n >= 1.25 ? 1.3 : n >= 1.1 ? 1.15 : 1; };
 function applyPrefs() {
   const chosen = store.getMeta('fontScale');
-  const fs = chosen !== undefined ? Number(chosen) || 1 : N.platform() === 'ios' ? systemFontScale() : 1;
+  const fs = chosen !== undefined ? fontStep(chosen) : N.platform() === 'ios' ? systemFontScale() : 1;
   document.documentElement.dataset.paper = store.getMeta('paper') || '';
   document.documentElement.style.setProperty('--fs', String(fs));
   document.documentElement.classList.toggle('fs-large', fs > 1);

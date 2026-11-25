@@ -1,60 +1,16 @@
-// 한 번 열면 인터넷 없이도 켜지도록 앱 파일을 통째로 보관한다.
-// 파일을 고치면 VERSION을 올린다. 새 버전은 뒤에서 내려받아 다음 실행부터 적용된다.
-const VERSION = 'v2';
-const CACHE = `gibun-nalssi-${VERSION}`;
-
-const FILES = [
-  './',
-  'index.html',
-  'manifest.webmanifest',
-  'css/app.css',
-  'js/app.js',
-  'js/card.js',
-  'js/forecast.js',
-  'js/icons.js',
-  'js/sky.js',
-  'js/store.js',
-  'js/util.js',
-  'js/weather.js',
-  'fonts/Pretendard.woff2',
-  'fonts/GowunBatang-Regular.woff2',
-  'fonts/GowunBatang-Bold.woff2',
-  'icons/favicon.png',
-  'icons/apple-touch-icon.png',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/maskable-192.png',
-  'icons/maskable-512.png',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(FILES.map((f) => new Request(f, { cache: 'reload' })))),
-  );
-  self.skipWaiting();
-});
-
+// 평가가 끝난 옛 시안: 이 서비스 워커는 옛 오프라인 사본을 지우고 스스로 해제한 뒤 새 버전으로 보낸다.
+// (시안 4는 본 앱과 캐시 이름이 같아 캐시는 건드리지 않는다 — 본 앱이 알아서 정리한다)
+const PREFIX = 'gibun-nalssi-';
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    (async () => {
+  event.waitUntil((async () => {
+    if (PREFIX) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter((k) => k.startsWith('gibun-nalssi-') && k !== CACHE).map((k) => caches.delete(k)));
-      await self.clients.claim();
-    })(),
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(CACHE);
-      if (request.mode === 'navigate') {
-        // ?demo 같은 주소도 같은 앱 화면을 연다
-        return (await cache.match('index.html')) || fetch(request);
-      }
-      return (await cache.match(request, { ignoreSearch: true })) || fetch(request);
-    })(),
-  );
+      await Promise.all(keys.filter((k) => k.startsWith(PREFIX)).map((k) => caches.delete(k)));
+    }
+    const home = new URL('../', self.registration.scope).href;
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    await self.registration.unregister();
+    await Promise.all(wins.map((c) => c.navigate(home).catch(() => null)));
+  })());
 });
