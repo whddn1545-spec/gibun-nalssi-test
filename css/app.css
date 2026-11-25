@@ -991,3 +991,13 @@ html[data-paper=sky] body[data-w]{--paper:#EAF3FB}
 .fortune-item{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 10px;border-radius:14px;background:#FFF6EC;border:1.5px solid var(--edge);font-weight:800;font-size:calc(15px * var(--fs,1));color:var(--ink)}
 .fortune-item__label{font-size:calc(12.5px * var(--fs,1));font-weight:700;color:var(--ink-2)}
 .fs-xl .fortune-lucky{grid-template-columns:1fr}
+
+/* 메모칸: 글이 길어지면 아래로 한 줄씩 늘어난다 (최대 40자). 아이콘·글자 수는 첫 줄·끝 줄에 붙는다 */
+.memo{align-items:flex-end}
+.memo-field{--mh:52px;height:auto;min-height:var(--mh);align-items:flex-start}
+.memo-field>svg{margin-top:calc((var(--mh) - 24px) / 2)}
+.memo-input{display:block;height:auto;margin:0;resize:none;overflow:hidden;font-family:inherit;line-height:1.4;
+  padding:calc((var(--mh) - 4px - 1.4em) / 2) 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.memo-field .count{align-self:flex-end;margin-bottom:calc((var(--mh) - 4px - 15px) / 2)}
+@media (max-height:720px){.memo-field{--mh:48px}}
+@media (max-height:600px){.memo-field{--mh:46px}}

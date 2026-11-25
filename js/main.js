@@ -539,6 +539,58 @@ function updateMemoUI() {
   // 입력칸의 40자 제한과 같은 기준으로 센다(이모지는 2칸)
   $('#memo-count').textContent = `${raw.length}/${store.MEMO_MAX}`;
   input.closest('.memo-field').classList.toggle('typing', raw.length > 0 && !same);
+  fitMemo(input);
+}
+
+// ---- 메모칸 늘리기: 글이 첫 줄을 넘으면 아래로 한 줄씩 늘어난다(최대 40자라 몇 줄이면 끝)
+function fitMemo(el) {
+  if (!el.getClientRects().length) return; // 숨어 있으면 보일 때 다시 맞춘다(아래 ResizeObserver)
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+/** 늘어난 메모칸이 키보드에 가리지 않게: 보이는 영역(visualViewport) 아래로 내려가면 그만큼 올린다 */
+function keepMemoVisible(el) {
+  const box = el.closest('form') || el;
+  const vv = window.visualViewport;
+  const r = box.getBoundingClientRect();
+  const bottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 12;
+  const scroller = box.closest('.view, .sheet__panel');
+  if (r.bottom > bottom && scroller) scroller.scrollBy({ top: r.bottom - bottom, behavior: 'smooth' });
+}
+for (const el of [$('#memo-input'), $('#sheet-memo')]) {
+  const form = el.closest('form');
+  const send = () => (form.requestSubmit ? form.requestSubmit() : form.querySelector('[type=submit]').click());
+  // Enter(키보드의 '완료')는 줄바꿈 대신 저장. 한글 조합 중 Enter는 글자 확정이라 건드리지 않는다
+  el.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.shiftKey || ev.isComposing || ev.keyCode === 229) return;
+    ev.preventDefault();
+    send();
+  });
+  // 안드로이드 키보드는 keydown 대신 줄바꿈 입력으로 온다
+  el.addEventListener('beforeinput', (ev) => {
+    if (ev.inputType !== 'insertLineBreak' && ev.inputType !== 'insertParagraph') return;
+    ev.preventDefault();
+    send();
+  });
+  el.addEventListener('input', () => {
+    if (/[\r\n]/.test(el.value)) {
+      // 붙여 넣은 줄바꿈은 띄어쓰기로(메모는 한 줄 글)
+      const at = el.selectionStart;
+      el.value = el.value.replace(/[\r\n]+/g, ' ');
+      el.setSelectionRange(at, at);
+    }
+    const before = el.offsetHeight;
+    fitMemo(el);
+    if (el.offsetHeight !== before && document.activeElement === el) keepMemoVisible(el);
+  });
+  let lastW = 0;
+  new ResizeObserver(() => {
+    const w = el.clientWidth;
+    if (w && w !== lastW) {
+      lastW = w;
+      fitMemo(el);
+    }
+  }).observe(el);
 }
 
 $('#memo-input').addEventListener('input', () => {
@@ -593,7 +645,7 @@ function memoReplyFor(m) {
 // 키보드가 떠 있는 동안만 아래 탭바를 숨긴다 (키보드 위에 뜨지 않게).
 // '뒤로'로 키보드만 닫고 입력칸에 포커스가 남아도 화면 높이가 돌아오면 탭바도 돌아온다.
 let fullH = window.innerHeight;
-const isTextFocused = () => !!(document.activeElement && document.activeElement.matches && document.activeElement.matches('input[type="text"]'));
+const isTextFocused = () => !!(document.activeElement && document.activeElement.matches && document.activeElement.matches('input[type="text"], textarea'));
 function syncKeyboard() {
   const vv = window.visualViewport;
   const h = vv ? vv.height : window.innerHeight;
@@ -604,7 +656,9 @@ function syncKeyboard() {
   // 키보드가 입력칸을 가리지 않게: 오늘 화면의 메모칸이 보이도록 스크롤
   if (open && document.activeElement === $('#memo-input')) {
     $('#memo-form').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    setTimeout(() => keepMemoVisible($('#memo-input')), 300);
   }
+  if (open && document.activeElement === $('#sheet-memo')) setTimeout(() => keepMemoVisible($('#sheet-memo')), 300);
 }
 document.addEventListener('focusin', () => setTimeout(syncKeyboard, 250));
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 50));
@@ -959,6 +1013,7 @@ function renderDay() {
     $('#sheet-picker').innerHTML = pickerHTML(e?.w);
     renderSheetFeel(k);
     $('#sheet-memo').value = e?.m || '';
+    fitMemo($('#sheet-memo'));
     app.sheetMemoDirty = false;
     $('#sheet-memo').placeholder = e ? sheetPh(e.w, k) : '이날을 한 줄로 남겨요';
     const title = e ? '이날의 날씨를 고쳐요' : k === app.todayK ? '오늘의 날씨를 남겨요' : '깜빡한 날의 날씨를 남겨요';
